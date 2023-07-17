@@ -11,8 +11,9 @@ int main() {
     //TestOneRoute();
     //TestEmptyStopAndRoute();
     //TestTaskBData();
-    TestNearbyStopsLengthData();
-
+    //while (true) {
+        TestNearbyStopsLengthData();
+   // }
    TransportCatalogue transport_catalogue;
    
    InputReader Input(cin, transport_catalogue);

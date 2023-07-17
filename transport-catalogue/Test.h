@@ -602,8 +602,6 @@ void TestNearbyStopsLengthData() {
 
     StatReader Stat(output, out_stream, transport_catalogue);
 
-
-
     std::string str = out_stream.str();
 
     assert(str == "Bus 256: 6 stops on route, 5 unique stops, 5950 route length, 1.36124 curvature\nBus 750: 7 stops on route, 3 unique stops, 27400 route length, 1.30853 curvature\nBus 751: not found\nStop Samara: not found\nStop Prazhskaya: no buses\nStop Biryulyovo Zapadnoye: buses 256 828\n");

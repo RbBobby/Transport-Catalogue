@@ -13,6 +13,8 @@ namespace transport_catalogue {
 		private:
 			double CalculateRouteLengthCoordinate(const Bus* bus) const;
 			double CalculateRouteLength(const TransportCatalogue& transport_catalogue, const Bus* bus) const;
+			void WriteBusInfo(std::ostream& output, const TransportCatalogue& transport_catalogue, const std::string& text);
+			void WriteStopInfo(std::ostream& output, const TransportCatalogue& transport_catalogue, const std::string& text);
 		};
 	}
 }

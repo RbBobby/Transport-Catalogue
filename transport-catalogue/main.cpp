@@ -1,26 +1,22 @@
-#include "stat_reader.h"
-#include "input_reader.h"
-#include "transport_catalogue.h"
-#include "Test.h"
+#include <iostream>
+#include <memory>
 
-using namespace std;
+#include "map_renderer.h"
+#include "json_reader.h"
+#include "request_handler.h"
+
+using namespace transport_catalogue;
 
 int main() {
-    //TestTaskData();
-    //TestFileData();
-    //TestOneRoute();
-    //TestEmptyStopAndRoute();
-    //TestTaskBData();
-    //while (true) {
-        TestNearbyStopsLengthData();
-   // }
-   TransportCatalogue transport_catalogue;
-   
-   InputReader Input(cin, transport_catalogue);
+    renderer::MapRenderer road_map;
 
-   StatReader Stat(cin, std::cout, transport_catalogue);
+    JsonReader json_reader(std::cin, road_map);
 
-    
+    json_reader.ProcessRequest();
+
+    RequestHandler request_handler(json_reader.GetRequestHandler());
+
+    json_reader.GetStat(std::cout);
+   // request_handler.RenderMap(std::cout);
 }
-
-
+    

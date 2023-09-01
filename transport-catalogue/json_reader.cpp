@@ -29,56 +29,70 @@ RequestHandler JsonReader::GetRequestHandler() const
 	return  request_handler;
 }
 
-void JsonReader::WriteBusInfo(Dict& response, Dict& dict_request)
+void JsonReader::WriteBusInfo(json::Builder& builder, Dict& dict_request)
 {	
 	auto bus = request_handler.GetBusStat(dict_request.at("name").AsString());
 	if (!bus) {
-		response["error_message"] = std::string{ "not found" };
+		builder
+			.Key("error_message")
+			.Value("not found");
 	}
 	else {
 		double route_length = CalculateRouteLength(transport_catalogue_, bus.value());
-		response["stop_count"] = static_cast<int>(bus->route.size());
-		response["route_length"] = route_length;
-		response["unique_stop_count"] = static_cast<int>(bus->unique_stops.size());
-		response["curvature"] = CalculateCurvature(route_length, CalculateRouteLengthCoordinate(bus.value()));
+
+		builder
+			.Key("stop_count")
+			.Value(static_cast<int>(bus->route.size()))
+			.Key("route_length")
+			.Value(route_length)
+			.Key("unique_stop_count")
+			.Value(static_cast<int>(bus->unique_stops.size()))
+			.Key("curvature")
+			.Value(CalculateCurvature(route_length, CalculateRouteLengthCoordinate(bus.value())));	
 	}
 }
 
-void JsonReader::WriteStopInfo(Dict& response, Dict& dict_request)
+void JsonReader::WriteStopInfo(json::Builder& builder, Dict& dict_request)
 {
 	auto list_buses_for_stop = transport_catalogue_.GetBasesForStop(transport_catalogue_.FindStop(dict_request.at("name").AsString()));
 
 	if (!transport_catalogue_.FindStop(dict_request.at("name").AsString())) {
-		response["error_message"] = std::string{ "not found" };
+		builder
+			.Key("error_message")
+			.Value("not found");		
 	}
 	else if (!list_buses_for_stop) {
-		response["buses"] = Array{};
+		builder
+			.Key("buses")
+			.Value(Array{}); 
 	}
 	else {
 		Array buses{};
 		for (const auto& bus : *list_buses_for_stop) {
 			buses.emplace_back(bus->bus_name);
 		}
-		response["buses"] = buses;
+		builder
+			.Key("buses")
+			.Value(buses);
 	}
 }
 
-void JsonReader::WriteSVGInfo(Dict& response)
+void JsonReader::WriteSVGInfo(json::Builder& builder)
 {	
 	std::ostringstream svg_doc;	
 	request_handler.RenderMap(svg_doc);
 	std::string str = svg_doc.str();
-	//json::Node str = std::string(svg_doc.str());
-	
-	response["map"] = str;
-	
+		
+	builder
+		.Key("map")
+		.Value(str);
 }
 
 void JsonReader::AddStops()
 {
-	auto& base_requests = input_doc_.GetRoot().AsMap().at("base_requests");	
+	auto& base_requests = input_doc_.GetRoot().AsDict().at("base_requests");	
 	for (const auto& base_request : base_requests.AsArray()) {
-		auto& query = base_request.AsMap();
+		auto& query = base_request.AsDict();
 		if (query.at("type").AsString() == "Stop") {
 			Stop stop;
 			stop.stop_name = query.at("name").AsString();
@@ -90,11 +104,11 @@ void JsonReader::AddStops()
 
 void JsonReader::AddStopsLength()
 {
-	auto& base_requests = input_doc_.GetRoot().AsMap().at("base_requests");
+	auto& base_requests = input_doc_.GetRoot().AsDict().at("base_requests");
 	for (const auto& base_request : base_requests.AsArray()) {
-		if (base_request.AsMap().at("type").AsString() == "Stop") {
-			std::string stop_name_1 = base_request.AsMap().at("name").AsString();
-			for (const auto& [stop_name_2, lenght] : base_request.AsMap().at("road_distances").AsMap()) {
+		if (base_request.AsDict().at("type").AsString() == "Stop") {
+			std::string stop_name_1 = base_request.AsDict().at("name").AsString();
+			for (const auto& [stop_name_2, lenght] : base_request.AsDict().at("road_distances").AsDict()) {
 				double lenght_between = lenght.AsDouble();
 				transport_catalogue_.AddStopLength({ transport_catalogue_.FindStop(stop_name_1), transport_catalogue_.FindStop(stop_name_2) }, lenght_between);
 			}
@@ -104,20 +118,20 @@ void JsonReader::AddStopsLength()
 
 void JsonReader::AddBusses()
 {
-	auto& base_requests = input_doc_.GetRoot().AsMap().at("base_requests");
+	auto& base_requests = input_doc_.GetRoot().AsDict().at("base_requests");
 	for (const auto& base_request : base_requests.AsArray()) {
-		if (base_request.AsMap().at("type").AsString() == "Bus") {
+		if (base_request.AsDict().at("type").AsString() == "Bus") {
 			Bus bus;
-			bus.bus_name = base_request.AsMap().at("name").AsString();
-			if (base_request.AsMap().count("stops")) {
-				for (const auto& stop : base_request.AsMap().at("stops").AsArray()) {
+			bus.bus_name = base_request.AsDict().at("name").AsString();
+			if (base_request.AsDict().count("stops")) {
+				for (const auto& stop : base_request.AsDict().at("stops").AsArray()) {
 					Stop* finding_stop = transport_catalogue_.FindStop(stop.AsString());
 					transport_catalogue_.AddStopNames(finding_stop);
 					bus.route.push_back(finding_stop);
 					bus.unique_stops.insert(finding_stop);
 				}			
 			}
-			bus.is_roundtrip = base_request.AsMap().at("is_roundtrip").AsBool();
+			bus.is_roundtrip = base_request.AsDict().at("is_roundtrip").AsBool();
 			if (!bus.is_roundtrip && !bus.route.empty()) {
 				auto route_buf = bus.route;
 				auto it = ++route_buf.rbegin();
@@ -132,9 +146,9 @@ void JsonReader::AddBusses()
 
 void JsonReader::AddRenderRettings()
 {
-	auto& render_settings = input_doc_.GetRoot().AsMap().at("render_settings");
+	auto& render_settings = input_doc_.GetRoot().AsDict().at("render_settings");
 	renderer::MapSetting map_setting;
-	for (const auto& [name_setting, value_setting] : render_settings.AsMap()) {
+	for (const auto& [name_setting, value_setting] : render_settings.AsDict()) {
 		if (name_setting == "width") {
 			map_setting.width = value_setting.AsDouble();
 		}
@@ -201,22 +215,28 @@ svg::Color JsonReader::AddCollor(const json::Node& value_setting) {
 
 void JsonReader::AddStatRequests()
 {
-	auto& stat_requests = input_doc_.GetRoot().AsMap().at("stat_requests");
+	auto& stat_requests = input_doc_.GetRoot().AsDict().at("stat_requests");
 	
 	for (const auto& stat_request : stat_requests.AsArray()) {
-		Dict dict_request = stat_request.AsMap();
+		Dict dict_request = stat_request.AsDict();
 		Dict response{};
-		response["request_id"] = dict_request.at("id");
+		json::Builder builder;
+		json::Node id = dict_request.at("id");
+		builder
+			.StartDict()
+			.Key("request_id")
+			.Value(std::move(id.GetValueNotConst()));
 		if (dict_request.at("type").AsString() == "Bus") {
-			WriteBusInfo(response, dict_request);
+			WriteBusInfo(builder, dict_request);
 		}
 		if (dict_request.at("type").AsString() == "Stop") {
-			WriteStopInfo(response, dict_request);
+			WriteStopInfo(builder, dict_request);
 		}
 		if (dict_request.at("type").AsString() == "Map") {
-			WriteSVGInfo(response);
+			WriteSVGInfo(builder);
 		}
-		response_request_.emplace_back(response);
+		builder.EndDict();
+		response_request_.emplace_back(builder.Build().AsDict());
 	}	
 }
 

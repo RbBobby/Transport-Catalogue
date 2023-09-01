@@ -1,11 +1,11 @@
 #pragma once
 #include <sstream>
  
+#include "json_builder.h"
 #include "json.h"
 #include "map_renderer.h"
 #include "request_handler.h"
 #include "transport_catalogue.h"
-
 
 class JsonReader {
 public:
@@ -17,9 +17,9 @@ public:
 	~JsonReader() = default;
 
 private:	
-	void WriteBusInfo(json::Dict& response, json::Dict& dict_request);
-	void WriteStopInfo(json::Dict& response, json::Dict& dict_request);
-	void WriteSVGInfo(json::Dict& response);
+	void WriteBusInfo(json::Builder& builder , json::Dict& dict_request);
+	void WriteStopInfo(json::Builder& builder , json::Dict& dict_request);
+	void WriteSVGInfo(json::Builder& builder);
 	svg::Color AddCollor(const json::Node& value_setting);
 
 	void AddStops();

@@ -132,7 +132,7 @@ namespace json {
 		return  ArrayItemContext(*this);
 	}
 
-	BaseContext Builder::EndDict()
+	Builder& Builder::EndDict()
 	{
 		if (flag) {
 			throw std::logic_error("Node completed");
@@ -145,7 +145,7 @@ namespace json {
 			node_ = *(nodes_stack_.back());
 			flag = true;
 			
-			return BaseContext(*this);
+			return *this;
 		}
 		nodes_stack_.pop_back();
 		if (nodes_stack_.back()->IsArray()) {			
@@ -156,10 +156,10 @@ namespace json {
 		}
 		last_command = LastCommand::EndDict;
 		
-		return BaseContext(*this);
+		return *this;
 	}
 
-	BaseContext Builder::EndArray()
+	Builder& Builder::EndArray()
 	{
 		if (flag) {
 			throw std::logic_error("Node completed");
@@ -172,7 +172,7 @@ namespace json {
 			node_ = *(nodes_stack_.back());
 			flag = true;
 			
-			return BaseContext(*this);
+			return *this;
 		}
 		nodes_stack_.pop_back();
 		if (nodes_stack_.back()->IsArray()) {
@@ -183,7 +183,7 @@ namespace json {
 		}
 		last_command = LastCommand::EndArray;
 		
-		return BaseContext(*this);
+		return *this;
 	}
 
 	Node Builder::Build()

@@ -6,9 +6,8 @@ namespace json {
 	class DictItemContext;
 	class ArrayItemContext;
 	class KeyItemContext;
-	
-	class ValueContext;
 	class Builder;
+
 	enum class LastCommand {
 		Start,
 		Key,
@@ -47,9 +46,9 @@ namespace json {
 
 		BaseContext Value(Node::Value&& value) = delete;
 
-		BaseContext StartDict() = delete;
+		DictItemContext StartDict() = delete;
 
-		BaseContext StartArray() = delete;
+		ArrayItemContext StartArray() = delete;
 
 		BaseContext EndArray() = delete;
 
@@ -62,7 +61,7 @@ namespace json {
 
 		DictItemContext Value(Node::Value&& value);
 
-		BaseContext Key(std::string&& str) = delete;
+		KeyItemContext Key(std::string&& str) = delete;
 
 		BaseContext EndDict() = delete;
 
@@ -75,7 +74,7 @@ namespace json {
 	public:
 		ArrayItemContext(BaseContext base_context);
 
-		BaseContext Key(std::string&& str) = delete;
+		KeyItemContext Key(std::string&& str) = delete;
 
 		ArrayItemContext Value(Node::Value&& value);
 
@@ -96,9 +95,9 @@ namespace json {
 
 		ArrayItemContext StartArray();
 
-		BaseContext EndDict();
+		Builder& EndDict();
 
-		BaseContext EndArray();
+		Builder& EndArray();
 
 		Node Build();
 

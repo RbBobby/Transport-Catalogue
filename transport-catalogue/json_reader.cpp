@@ -1,6 +1,5 @@
 #include "json_reader.h"
 
-
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
  * а также код обработки запросов к базе и формирование массива ответов в формате JSON
@@ -9,6 +8,9 @@ using Dict = json::Dict;
 using Array = json::Array;
 using Document = json::Document;
 using TransportCatalogue = transport_catalogue::TransportCatalogue;
+
+using namespace std::literals;
+
 JsonReader::JsonReader(std::istream& input, renderer::MapRenderer& map_renderer)
 	: input_doc_(json::Load(input))
 	, map_renderer_(map_renderer)
@@ -21,6 +23,7 @@ void JsonReader::ProcessRequest()
 	AddStopsLength();
 	AddBusses();
 	AddRenderRettings();
+	AddRoutingSettings();
 	AddStatRequests();
 }
 
@@ -35,7 +38,7 @@ void JsonReader::WriteBusInfo(json::Builder& builder, Dict& dict_request)
 	if (!bus) {
 		builder
 			.Key("error_message")
-			.Value("not found");
+			.Value(std::string("not found"));
 	}
 	else {
 		double route_length = CalculateRouteLength(transport_catalogue_, bus.value());
@@ -59,7 +62,7 @@ void JsonReader::WriteStopInfo(json::Builder& builder, Dict& dict_request)
 	if (!transport_catalogue_.FindStop(dict_request.at("name").AsString())) {
 		builder
 			.Key("error_message")
-			.Value("not found");		
+			.Value(std::string("not found"));
 	}
 	else if (!list_buses_for_stop) {
 		builder
@@ -86,6 +89,37 @@ void JsonReader::WriteSVGInfo(json::Builder& builder)
 	builder
 		.Key("map")
 		.Value(str);
+}
+
+void JsonReader::WriteRouteInfo(json::Builder& builder, json::Dict& dict_request)
+{
+	auto route_build = transport_router_.BuildRoute(transport_catalogue_,
+		dict_request.at("from"s).AsString(),
+		dict_request.at("to"s).AsString());
+	//
+	if (route_build) {
+		builder.Key("total_time"s).Value(route_build.value().first);
+		builder.Key("items"s).StartArray();
+		for (const auto& item : route_build.value().second) {
+			builder.StartDict();
+			if (item.type == transport_router::RouteSegmentType::Wait) {
+				builder.Key("stop_name"s).Value(item.stop_name);
+				builder.Key("time"s).Value(item.time);
+				builder.Key("type"s).Value("Wait"s);
+			}
+			else {
+				builder.Key("bus"s).Value(item.bus);
+				builder.Key("span_count"s).Value(item.span_count);
+				builder.Key("time"s).Value(item.time);
+				builder.Key("type"s).Value("Bus"s);
+			}
+			builder.EndDict();
+		}
+		builder.EndArray();
+	}
+	else {
+		builder.Key("error_message"s).Value("not found"s);
+	}
 }
 
 void JsonReader::AddStops()
@@ -190,6 +224,16 @@ void JsonReader::AddRenderRettings()
 	map_renderer_.SetSetting(map_setting);	
 }
 
+void JsonReader::AddRoutingSettings()
+{
+	auto& routing_settings = input_doc_.GetRoot().AsDict().at("routing_settings");
+	const double KPH_TO_MPM = 1000.0 / 60.0;
+	int wait = routing_settings.AsDict().at("bus_wait_time").AsInt();
+	double velocity = routing_settings.AsDict().at("bus_velocity").AsDouble() * KPH_TO_MPM;
+	RoutingSettings routing_setting = { wait, velocity };
+	transport_router_.SetRoutingSetting(routing_setting);
+}
+
 svg::Color JsonReader::AddCollor(const json::Node& value_setting) {
 	//строковый тип Color
 	if (value_setting.IsString()) {
@@ -218,8 +262,8 @@ void JsonReader::AddStatRequests()
 	auto& stat_requests = input_doc_.GetRoot().AsDict().at("stat_requests");
 	
 	for (const auto& stat_request : stat_requests.AsArray()) {
-		Dict dict_request = stat_request.AsDict();
-		Dict response{};
+		Dict dict_request = stat_request.AsDict();//формируем ответ в этот словарь
+		//Dict response{};
 		json::Builder builder;
 		json::Node id = dict_request.at("id");
 		builder
@@ -234,6 +278,9 @@ void JsonReader::AddStatRequests()
 		}
 		if (dict_request.at("type").AsString() == "Map") {
 			WriteSVGInfo(builder);
+		}
+		if (dict_request.at("type").AsString() == "Route") {
+			WriteRouteInfo(builder, dict_request);
 		}
 		builder.EndDict();
 		response_request_.emplace_back(builder.Build().AsDict());

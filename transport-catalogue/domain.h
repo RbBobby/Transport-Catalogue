@@ -17,6 +17,8 @@
  *
  */
 
+
+
 struct Stop {
 	std::string stop_name;
 	geo::Coordinates coordinates;
@@ -28,4 +30,5 @@ struct Bus {
 	std::deque<Stop*> route;
 	bool is_roundtrip;
 	std::unordered_set<Stop*> unique_stops;
+	
 };

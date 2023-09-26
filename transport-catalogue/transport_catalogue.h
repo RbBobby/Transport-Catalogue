@@ -44,6 +44,8 @@ namespace transport_catalogue {
 		double GetLengthBetweenStops(Stop* first_stop, Stop* second_stop) const; //не могу понять, как разрешить проблему с константностью, когда ставлю const Stop*, то сразу перестают работать методы .count и .at
 		const std::set<Bus*, BusCompare>* GetBasesForStop(Stop* stop) const;
 		const std::map<std::string, Stop*>* GetStopNames() const;
+		size_t GetStopsCount() const;
+
 
 	private:
 		std::map<std::string, Stop*> stop_names_;//остановки, через который проходит хотя бы один автобус
@@ -52,5 +54,7 @@ namespace transport_catalogue {
 		std::unordered_map<std::string_view, Stop*> stop_name_to_stop_ptr_;
 		std::unordered_map<Stop*, std::set<Bus*, BusCompare>> stop_name_to_bus_ptr_; //BusCompare сортирует лескикографически по именам Bus
 		std::unordered_map<std::pair<Stop*, Stop*>, double, hash_neighbor_stops> pair_stops_to_length_;
+
+		
 	};
 }

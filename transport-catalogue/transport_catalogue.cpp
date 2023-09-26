@@ -58,6 +58,13 @@ const std::map<std::string, Stop*>* transport_catalogue::TransportCatalogue::Get
 	return &stop_names_;
 }
 
+size_t transport_catalogue::TransportCatalogue::GetStopsCount() const
+{
+	return stop_name_to_stop_ptr_.size();
+}
+
+
+
 double TransportCatalogue::GetLengthBetweenStops(Stop* first_stop, Stop* second_stop) const {
 
 	if (pair_stops_to_length_.count({ first_stop, second_stop })) {

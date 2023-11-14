@@ -1,6 +1,7 @@
 #include <iostream>
+#include <sstream>
 #include <memory>
-//#include <fstream>
+#include <fstream>
 
 #include "map_renderer.h"
 #include "json_reader.h"
@@ -8,17 +9,41 @@
 
 using namespace transport_catalogue;
 
-int main() {
-   // std::ifstream in("input_1.json");
-    renderer::MapRenderer road_map;
+using namespace std::literals;
 
-    JsonReader json_reader(std::cin, road_map);
-
-    json_reader.ProcessRequest();
-
-    RequestHandler request_handler(json_reader.GetRequestHandler());
-
-    json_reader.GetStat(std::cout);
-   // request_handler.RenderMap(std::cout);
+void PrintUsage(std::ostream& stream = std::cerr) {
+    stream << "Usage: transp ort_catalogue [make_base|process_requests]\n"sv;
 }
+
+int main(int argc, char* argv[]) {
+   
+    if (argc != 2) {
+        PrintUsage();
+        return 1;
+    } 
+
+    const std::string_view mode(argv[1]);
+
+    if (mode == "make_base"sv) {
+
+      renderer::MapRenderer road_map;
+      JsonReader json_reader(std::cin, road_map);
+
+      json_reader.ProcessRequest();
+
+    } else if (mode == "process_requests"sv) {
+      
+      renderer::MapRenderer road_map;
+      JsonReader json_reader(std::cin, road_map);
+
+      json_reader.GetStat(std::cout);
+        // process requests here
+
+    } else {
+      std::cout << argv[1] << argv[2];
+        PrintUsage();
+        return 1;
+    }
+}
+
     

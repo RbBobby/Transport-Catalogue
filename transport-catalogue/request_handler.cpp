@@ -14,6 +14,8 @@ double CalculateRouteLengthCoordinate(const Bus& bus){
 double CalculateRouteLength(const TransportCatalogue& transport_catalogue, const Bus& bus){
 	double route_length = 0;
 	for (size_t i = 1; i != bus.route.size(); ++i) {
+		//std::cout << " bus.route[i - 1] " << bus.route[i - 1] << " "<< bus.route[i - 1]->stop_name<< std::endl;
+		//std::cout << " bus.route[i]" << bus.route[i]<< " "<< bus.route[i - 1]->stop_name << std::endl;
 		route_length += transport_catalogue.GetLengthBetweenStops(bus.route[i - 1], bus.route[i]);
 	}
 	return route_length;

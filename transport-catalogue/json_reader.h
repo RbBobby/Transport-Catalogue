@@ -7,15 +7,14 @@
 #include "request_handler.h"
 #include "transport_catalogue.h"
 #include "transport_router.h"
+#include "serialization.h"
 
 class JsonReader {
 public:
-	
-
 	JsonReader(std::istream& input, renderer::MapRenderer&  map_renderer);
 	void ProcessRequest();
 	RequestHandler GetRequestHandler()const;
-	void GetStat(std::ostream& os) const;
+	void GetStat(std::ostream& os);
 	~JsonReader() = default;
 
 private:	
@@ -31,7 +30,10 @@ private:
 	void AddStatRequests();
 	void AddRenderRettings();
 	void AddRoutingSettings();	
-	
+	void AddSerializationSettings();	
+	void SerializeTC();
+
+private:	
 	json::Document input_doc_;
 	renderer::MapRenderer& map_renderer_;
 	transport_catalogue::TransportCatalogue transport_catalogue_;	
@@ -39,4 +41,6 @@ private:
 	json::Array response_request_;
 	RequestHandler request_handler{ transport_catalogue_, map_renderer_ };
 	transport_router::TransportRouter transport_router_;
+ 
+	serialization::Serializer serializer;
 };

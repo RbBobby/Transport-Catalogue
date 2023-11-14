@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <deque>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "geo.h"
@@ -23,6 +24,7 @@ struct Stop {
 	std::string stop_name;
 	geo::Coordinates coordinates;
 	bool operator==(Stop& rhs) const;
+	std::unordered_map<Stop *, double> set_length_to_this_stop;
 };
 
 struct Bus {

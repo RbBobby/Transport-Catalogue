@@ -20,21 +20,31 @@ private:
     using Graph = DirectedWeightedGraph<Weight>;
 
 public:
+    struct RouteInternalData {
+        Weight weight;
+        std::optional<EdgeId> prev_edge;
+    };
+using RoutesInternalData = std::vector<std::vector<std::optional<RouteInternalData>>>;
     explicit Router(const Graph& graph);
 
     struct RouteInfo {
         Weight weight;
         std::vector<EdgeId> edges;
     };
-
+explicit Router(const Graph &graph, RoutesInternalData &&routes_internal_data);
     std::optional<RouteInfo> BuildRoute(VertexId from, VertexId to) const;
 
-private:
-    struct RouteInternalData {
-        Weight weight;
-        std::optional<EdgeId> prev_edge;
-    };
-    using RoutesInternalData = std::vector<std::vector<std::optional<RouteInternalData>>>;
+    RoutesInternalData &GetMutableRoutesInternalData() {
+            return routes_internal_data_;
+    }
+
+    const RoutesInternalData *GetRoutesInternalData() const {
+            return &routes_internal_data_;
+    }
+
+const graph::DirectedWeightedGraph<double>& GetGraph() const;
+
+private:    
 
     void InitializeRoutesInternalData(const Graph& graph) {
         const size_t vertex_count = graph.GetVertexCount();
@@ -95,23 +105,36 @@ Router<Weight>::Router(const Graph& graph)
 }
 
 template <typename Weight>
-std::optional<typename Router<Weight>::RouteInfo> Router<Weight>::BuildRoute(VertexId from,
-                                                                             VertexId to) const {
-    const auto& route_internal_data = routes_internal_data_.at(from).at(to);
-    if (!route_internal_data) {
-        return std::nullopt;
-    }
-    const Weight weight = route_internal_data->weight;
-    std::vector<EdgeId> edges;
-    for (std::optional<EdgeId> edge_id = route_internal_data->prev_edge;
-         edge_id;
-         edge_id = routes_internal_data_[from][graph_.GetEdge(*edge_id).from]->prev_edge)
-    {
-        edges.push_back(*edge_id);
-    }
-    std::reverse(edges.begin(), edges.end());
+inline Router<Weight>::Router(const Graph &graph, RoutesInternalData &&routes_internal_data)
+: graph_(graph), routes_internal_data_(std::move(routes_internal_data))
+{
 
-    return RouteInfo{weight, std::move(edges)};
+}
+
+ template<typename Weight>
+    std::optional<typename Router<Weight>::RouteInfo> Router<Weight>::BuildRoute(VertexId from,
+                                                                                 VertexId to) const {
+                                                                         
+        const auto &route_internal_data = routes_internal_data_.at(from).at(to);
+        if (!route_internal_data) {
+            return std::nullopt;
+        }
+        const Weight weight = route_internal_data->weight;
+        std::vector<EdgeId> edges;
+        for (std::optional<EdgeId> edge_id = route_internal_data->prev_edge;
+            edge_id;
+            edge_id = routes_internal_data_.at(from).at(graph_.GetEdge(*edge_id).from)->prev_edge) {
+            edges.emplace_back(*edge_id);
+        }
+        std::reverse(edges.begin(), edges.end());
+
+        return RouteInfo{weight, std::move(edges)};
+    }
+
+template <typename Weight>
+inline const graph::DirectedWeightedGraph<double>& Router<Weight>::GetGraph() const
+{
+    return graph_;
 }
 
 }  // namespace graph

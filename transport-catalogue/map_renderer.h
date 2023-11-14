@@ -90,7 +90,7 @@ public:
     void SetTextStop(svg::ObjectContainer& container, const std::string str_stop_name, const svg::Point proj_geo_coord) const;
     void SetSetting(const MapSetting& map_setting);
     void SetBusesAndStops(const std::deque<Bus>* buses, const std::map<std::string, Stop*>* stops_);
-
+    const MapSetting& GetSetting()const;
 private:
     MapSetting map_setting_;
     const std::deque<Bus>* buses_;

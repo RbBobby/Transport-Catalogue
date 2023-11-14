@@ -19,12 +19,12 @@ JsonReader::JsonReader(std::istream& input, renderer::MapRenderer& map_renderer)
 
 void JsonReader::ProcessRequest()
 {
-	AddStops();
-	AddStopsLength();
+	AddStops();	
 	AddBusses();
 	AddRenderRettings();
 	AddRoutingSettings();
-	AddStatRequests();
+	AddSerializationSettings();	
+	SerializeTC();
 }
 
 RequestHandler JsonReader::GetRequestHandler() const
@@ -41,7 +41,7 @@ void JsonReader::WriteBusInfo(json::Builder& builder, Dict& dict_request)
 			.Value(std::string("not found"));
 	}
 	else {
-		double route_length = CalculateRouteLength(transport_catalogue_, bus.value());
+	double route_length = CalculateRouteLength(transport_catalogue_, bus.value());
 
 		builder
 			.Key("stop_count")
@@ -96,7 +96,6 @@ void JsonReader::WriteRouteInfo(json::Builder& builder, json::Dict& dict_request
 	auto route_build = transport_router_.BuildRoute(transport_catalogue_,
 		dict_request.at("from"s).AsString(),
 		dict_request.at("to"s).AsString());
-	//
 	if (route_build) {
 		builder.Key("total_time"s).Value(route_build.value().first);
 		builder.Key("items"s).StartArray();
@@ -134,6 +133,7 @@ void JsonReader::AddStops()
 			transport_catalogue_.AddStop(stop);
 		}
 	}
+	AddStopsLength();
 }
 
 void JsonReader::AddStopsLength()
@@ -234,6 +234,12 @@ void JsonReader::AddRoutingSettings()
 	transport_router_.SetRoutingSetting(routing_setting);
 }
 
+void JsonReader::AddSerializationSettings()
+{ 
+	SerializerSettings serializer_settings = {input_doc_.GetRoot().AsDict().at("serialization_settings").AsDict().at("file").AsString()};
+	serializer.SetSettings(serializer_settings);
+}
+
 svg::Color JsonReader::AddCollor(const json::Node& value_setting) {
 	//строковый тип Color
 	if (value_setting.IsString()) {
@@ -258,7 +264,7 @@ svg::Color JsonReader::AddCollor(const json::Node& value_setting) {
 }
 
 void JsonReader::AddStatRequests()
-{
+{	
 	auto& stat_requests = input_doc_.GetRoot().AsDict().at("stat_requests");
 	
 	for (const auto& stat_request : stat_requests.AsArray()) {
@@ -287,7 +293,14 @@ void JsonReader::AddStatRequests()
 	}	
 }
 
-void JsonReader::GetStat(std::ostream& os)const {
+void JsonReader::SerializeTC(){		
+		serializer.Serialize(transport_catalogue_, map_renderer_.GetSetting(), transport_router_.GetRoutingSettings(), transport_router_);
+}
+
+void JsonReader::GetStat(std::ostream& os) {
+	AddSerializationSettings();	
+	serializer.Deserialize(transport_catalogue_, map_renderer_, transport_router_);
+	AddStatRequests();
 	json::Print(Document{ response_request_ }, os);
 }
 

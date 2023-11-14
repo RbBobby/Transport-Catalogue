@@ -188,3 +188,7 @@ void renderer::MapRenderer::SetBusesAndStops(const std::deque<Bus>* buses, const
     stops_ = stops;
 }
 
+const renderer::MapSetting &renderer::MapRenderer::GetSetting() const
+{
+    return map_setting_;
+}
